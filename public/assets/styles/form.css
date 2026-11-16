@@ -1,0 +1,74 @@
+@import url("color-vars.css");
+
+.field-input {
+  font-size: 20px;
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 15px;
+}
+
+.field-label {
+  margin-top: 25px;
+  display: inline-block;
+}
+
+.field-error {
+  margin: 5px 0;
+  color: red;
+}
+
+.back {
+  padding-left: 10px;
+}
+
+.submit-buttons {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.form-additionals {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px 20px;
+}
+
+.two-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20px;
+}
+
+.password-field {
+  display: flex;
+  align-items: center;
+  border: 2px solid rgb(117, 117, 117);
+  background-color: white;
+  border-radius: 15px;
+}
+
+.password-field input {
+  outline: none;
+  background-color: transparent;
+  border: none;
+}
+
+.password-field button {
+  background-color: transparent;
+  border: none;
+  margin-top: 3px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.password {
+  width: 90%;
+}

@@ -1,0 +1,29 @@
+@import url("color-vars.css");
+
+/* .modal-overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+} */
+
+.modal::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+  background-color: var(--sand);
+  border: 3px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 50px;
+}
+
+.modal p {
+  font-size: 20px;
+}

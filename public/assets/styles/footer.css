@@ -1,0 +1,46 @@
+@import url("color-vars.css");
+
+footer {
+  padding: 30px 20px 24px 20px;
+  background: var(--cream);
+  border-top: 1px solid black;
+  flex-shrink: 0;
+}
+
+.footer-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  font-weight: 600;
+  justify-self: center;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: inherit;
+  font-size: 1.5rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 12px;
+  justify-self: end;
+}
+
+.footer-row > img {
+  justify-self: start;
+}
+
+.copyright {
+  text-align: center;
+  font-size: 11px;
+  margin-top: 40px;
+}

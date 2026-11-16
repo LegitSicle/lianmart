@@ -1,0 +1,19 @@
+{
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "app\\": "src/app/",
+            "core\\": "src/core/"
+        },
+        "files": [
+            "src/core/util/cleanPath.php"
+        ]
+    },
+    "scripts": {
+        "start": "bash scripts/start.sh",
+        "stop": "bash scripts/stop.sh",
+        "migrate": "bash scripts/migrate.sh"
+    }
+}

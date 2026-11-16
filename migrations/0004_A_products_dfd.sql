@@ -1,0 +1,2 @@
+ALTER TABLE Products
+ALTER COLUMN productDetails SET DEFAULT "";

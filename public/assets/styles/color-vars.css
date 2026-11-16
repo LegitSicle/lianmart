@@ -1,0 +1,24 @@
+:root {
+  --cream: #fdfaf1;
+  --beige: #fbf3e4;
+  --sand: #f7e7cc;
+  --sage: #e7ede0;
+  --green: #236b4b;
+  --ink: #1f3a2c;
+  --orange: #ee8434;
+  --gray: #c4c4c4;
+  --line: #b9b9b9;
+
+  --green-soft: #e8eddf;
+
+  --bg: #fdfbf5;
+  --surface: #fff;
+  --text: #2b2b2b;
+  --muted: #6b706b;
+  --border: #cdd3cd;
+  --green-disabled: #184e36;
+  --soft: #e9eee3;
+  --ph: #eceee8;
+  --ph-ink: #8a928a;
+  color-scheme: light
+}

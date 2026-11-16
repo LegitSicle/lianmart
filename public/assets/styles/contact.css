@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap');
+
+:root{
+  --green: #246B4A;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body{
+  font-family: 'Google Sans Flex', sans-serif;
+}
+
+main{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--green);
+  padding: 2rem 2rem 8rem 2rem;
+}
+
+.form-container{
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-left: 4rem;
+}
+
+form{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-header{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.form-header h2{
+  font-size: 2rem;
+}
+
+.form-name-container{
+  display: flex;
+  gap: 1rem;
+}
+
+.form-name-container div{
+  display: flex;
+  flex-direction: column;
+}
+
+.form-email-container{
+  display: flex;
+  flex-direction: column;
+}
+
+.form-phone-container{
+  display: flex;
+  flex-direction: column;
+}
+
+.form-message-container{
+  display: flex;
+  flex-direction: column;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"]{
+  padding: 0.3rem;
+  border: 1px solid gray;
+  border-radius: 6px;
+  font-size: 1rem;
+  min-width: 300px;
+}
+
+textarea{
+  height: 100px;
+  resize: vertical;
+  min-height: 200px;
+  max-height: 400px;
+  padding: 0.3rem;
+  font-size: 1rem;
+  font-family: 'Google Sans Flex', sans-serif;
+}
+
+.form-action-container{
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  margin-top: 8px;
+}
+
+button{
+  padding: 3px 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button[type="submit"]{
+  background-color: var(--green);
+  color: white;
+  border: 1px solid var(--green);
+}
+
+button[type="submit"]:hover{
+  background-color: #1a5a3a;
+}
+
+button[type="reset"]{
+  background-color: white;
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+button[type="reset"]:hover{
+  background-color: #f0f0f0;
+}
