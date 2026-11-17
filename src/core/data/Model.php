@@ -13,7 +13,6 @@ use function call_user_func;
  * Used for storing and validating data only.
  */
 abstract class Model {
-    private static ?Model $emptyInstance = null;
     /**
      * Makes a property required when posting.<br>
      * `[..., SELF::RULE_REQUIRED]`
@@ -106,10 +105,6 @@ abstract class Model {
         return $this->errors[$attribute][0];
     }
 
-    public function isEmpty(): bool {
-        return false;
-    }
-
     protected function parseSelf(callable $checker): void {
         foreach ($this->rules() as $attribute => $rules) {
             $value = $this->{$attribute};
@@ -191,22 +186,5 @@ abstract class Model {
         $reflection = new ReflectionProperty(static::class, $attribute);
         $type = $reflection->getType();
         return $type === null || $type->allowsNull();
-    }
-
-    public static function empty(): static {
-        if (self::$emptyInstance === null) {
-            self::$emptyInstance = new class extends Model {
-                public function rules(): array {
-                    return [];
-                }
-
-                public function isEmpty(): bool
-                {
-                    return true;
-                }
-            };
-        }
-
-        return self::$emptyInstance;
     }
 }

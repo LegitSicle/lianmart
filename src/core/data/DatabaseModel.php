@@ -123,6 +123,7 @@ abstract class DatabaseModel extends Model {
      * Similar to `validate()` of its parent class but this allows access to the database allowing it to check values.
      * @return bool Whether there was a rule broken.
      */
+    #[Override]
     public function validate(): bool {
         $this->parseSelf(function (string $ruleName, string $attribute, mixed $param, mixed $value) {
             $this->defaultChecker($ruleName, $attribute, $param, $value);

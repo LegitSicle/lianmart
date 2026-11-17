@@ -31,3 +31,19 @@ This is a wrapper class for the super global `$_SESSION`. It allows flash and ti
 This is a utility class for retrieving the HTML that is used for the `Response.class` to echo.
 
 ## Database-Related Classes
+
+### Database
+
+Mainly used for migrations and initializing the PDO connection to the database. Any SQL querying happens in the `SQLStatement.class`.
+
+### SQLStatement
+
+Class for easier SQL querying using method chaining.
+
+### Model
+
+Mainly used as a validator class
+
+### DatabaseModel
+
+Is the PHP representation of a database table. It inherits from `Model.class` with additional availabled rules.

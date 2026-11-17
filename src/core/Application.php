@@ -65,7 +65,7 @@ class Application {
         }
     }
 
-    public function login(DatabaseModel $user): void {
+    public function login(UserModel $user): void {
         $primaryKey = $user->primaryKey();
         $primaryValue = $user->{$primaryKey};
         $this->session->set("user", $primaryValue);
