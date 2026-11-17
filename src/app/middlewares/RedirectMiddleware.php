@@ -14,7 +14,7 @@ class RedirectMiddleware extends Middleware {
     public function handle(Request $request, callable $next): Response {
         $isValidRedirect = self::getShared("session")->getFlash("isValidRedirect");
         if (empty($isValidRedirect) || !$isValidRedirect) {
-            return Response::redirectOnly($this->redirectURL);
+            return Response::redirect($this->redirectURL);
         }
         return $next($request);
     }

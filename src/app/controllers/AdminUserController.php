@@ -1,6 +1,7 @@
 <?php
 namespace app\controllers;
 
+use app\models\database\DisabledUsers;
 use Override;
 use PDO;
 use core\controller\Controller;
@@ -12,15 +13,32 @@ class AdminUserController extends Controller {
     #[Override]
     public function index(Request $request): Response {
         $body = $request->body();
-        $body["section"] = "Customers";
-        $body["users"] = $this->queryUsers($body["search"]);
-        return Response::create()->contentFrom($request->path(), "admin", $body);
+
+        if ($request->isGet()) {
+            $body["section"] = "Customers";
+            $body["users"] = $this->queryUsers($body["search"]);
+            return Response::create()
+                ->contentFrom($request->path(), "admin", $body);
+        }
+
+        // POST Request
+        $banned = new DisabledUsers();
+        $banned->loadData([
+            "userId" => $body["userId"]
+        ]);
+        if ($body["action"] === "ban") {
+            $banned->insert();
+        } else if ($body["action"] === "unban") {
+            $banned->delete();
+        }
+        return Response::redirect("/admin/users");
     }
 
     private function queryUsers(?string $search): array {
         /** @var SQLStatement */
         $sql = $this->injectedData["sql"];
         $sql = $sql->select([
+                "Users.userId",
                 "firstname",
                 "lastname",
                 "email",

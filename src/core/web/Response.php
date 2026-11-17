@@ -19,7 +19,7 @@ final class Response {
      * @param string $URI Route to be redirected to
      * @return Response
      */
-    public static function redirectOnly(string $URI): self {
+    public static function redirect(string $URI): self {
         return (new Response())
             ->headers("Location", dirname(dirname($_SERVER['SCRIPT_NAME'])) . $URI);
     }

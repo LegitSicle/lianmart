@@ -332,7 +332,8 @@ main.content {
 }
 
 .users-table thead th:last-child {
-	padding-right: 14px
+	padding: 0 8px;
+	text-align: center
 }
 
 .users-table .th-inner {
@@ -367,6 +368,11 @@ main.content {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis
+}
+
+.users-table tbody td:last-child {
+	padding: 0 8px;
+	text-align: center
 }
 
 .users-table tbody tr:hover {
@@ -470,25 +476,39 @@ main.content {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
+	padding: 0 10px;
 	height: 28px;
 	border: none;
 	border-radius: 6px;
-	background: none;
+	font: inherit;
+	font-weight: 600;
+	white-space: nowrap;
 	cursor: pointer
 }
 
-.users-table .icon-btn-edit { color: var(--ink) }
-.users-table .icon-btn-delete { color: var(--red) }
+.users-table .icon-btn-edit {
+	background: #e5e5e5;
+	color: #000
+}
 
-.users-table .icon-btn-edit:hover { background: var(--green-soft) }
-.users-table .icon-btn-delete:hover { background: rgba(232, 50, 44, 0.12) }
+.users-table .icon-btn-delete {
+	background: var(--red);
+	color: var(--white)
+}
+
+.users-table .icon-btn-edit:hover { background: #d2d2d2 }
+.users-table .icon-btn-delete:hover { background: #c62822 }
 
 .users-table .icon-btn:focus-visible,
 .users-table .sort-btn:focus-visible,
 .users-table input[type="checkbox"]:focus-visible {
 	outline: 2px solid var(--orange);
 	outline-offset: 2px
+}
+
+.icon-btn:disabled {
+  filter: brightness(80%);
+  cursor: not-allowed;
 }
 
 

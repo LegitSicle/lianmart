@@ -23,10 +23,10 @@ class AdminProductController extends Controller {
         if ($request->isGet()) {
             if (isset($body["editProduct"])) {
                 $productId = filter_var($body["editProduct"], FILTER_VALIDATE_INT);
-                if ($productId === false || $productId < 1) return Response::redirectOnly("/admin/products");
+                if ($productId === false || $productId < 1) return Response::redirect("/admin/products");
 
                 $product = Products::findOne(["productId", "=", $productId]);
-                if ($product === false) return Response::redirectOnly("/admin/products");
+                if ($product === false) return Response::redirect("/admin/products");
                 $body["model"] = $product;
 
                 $productImage = ProductImages::findOne(["productId", "=", $productId]);
@@ -44,7 +44,7 @@ class AdminProductController extends Controller {
             $product = new Products();
             $product->loadData($body);
             if (isset($body["editProduct"])) {
-                if ($body["editProduct"] === false || $body["editProduct"] < 1) return Response::redirectOnly("/admin/products");
+                if ($body["editProduct"] === false || $body["editProduct"] < 1) return Response::redirect("/admin/products");
                 $product->loadData([
                     "productId" => $body["editProduct"]
                 ]);
@@ -85,7 +85,7 @@ class AdminProductController extends Controller {
                 }
             }
         } else if ($body["action"] === "delete") {
-            if (!isset($body["editProduct"])) return Response::redirectOnly("/admin/products");
+            if (!isset($body["editProduct"])) return Response::redirect("/admin/products");
             $productImage = ProductImages::findOne(["productId", "=", $body["editProduct"]]);
             if ($productImage) $productImage->delete();
 
@@ -105,7 +105,7 @@ class AdminProductController extends Controller {
         if ($redirectParams !== []) {
             $redirectUrl .= "?" . http_build_query($redirectParams);
         }
-        return Response::redirectOnly($redirectUrl);
+        return Response::redirect($redirectUrl);
     }
 
     private function queryProducts(?string $search): array {

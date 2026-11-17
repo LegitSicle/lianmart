@@ -60,7 +60,7 @@ class CartController extends Controller {
                     
                     $this->deleteCartItem($productId);
                     $this->createValidRedirect();
-                    return Response::redirectOnly("/ordered");
+                    return Response::redirect("/ordered");
                 }
             }
         }

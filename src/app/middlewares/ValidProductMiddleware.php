@@ -12,7 +12,7 @@ class ValidProductMiddleware extends Middleware {
     public function handle(Request $request, callable $next): Response {
         $body = $request->body();
         $productId = $body["id"];
-        if (empty($productId)) return Response::redirectOnly("/home");
+        if (empty($productId)) return Response::redirect("/home");
 
         /** @var SQLStatement */
         $sql = self::getShared("sql");
@@ -23,7 +23,7 @@ class ValidProductMiddleware extends Middleware {
             ->limit(1)
             ->query()
             ->fetchColumn();
-        if (!$result) return Response::redirectOnly("/home");
+        if (!$result) return Response::redirect("/home");
         return $next($request);
     }
 }

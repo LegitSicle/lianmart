@@ -47,7 +47,7 @@ class CatalogController extends Controller {
                 ...$body
             ]);
             $cartItem->insert();
-            return Response::redirectOnly("/catalog");
+            return Response::redirect("/catalog");
         } else if ($action === "buy") {
             $userId = $this->injectedData["userId"];
             $productId = $body["productId"];
@@ -79,9 +79,9 @@ class CatalogController extends Controller {
             $product->update();
 
             $this->createValidRedirect();
-            return Response::redirectOnly("/ordered");
+            return Response::redirect("/ordered");
         }
-        return Response::redirectOnly("/catalog");
+        return Response::redirect("/catalog");
     }
 
     private function createValidRedirect(): void {

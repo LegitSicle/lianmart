@@ -78,7 +78,7 @@ $maxPageCount = (int) ceil(count($users) / 15);
                     </th>
                     <th scope="col">
                         <div class="th-inner">
-                            <p>Joined Date</p>
+                            <p>Join Date</p>
                                 <button type="button" class="sort-btn" aria-label="Sort by Joined Date">
                                 <img width="12" height="16" src="/lianmart/assets/images/admins/sort.svg" alt="sort">
                             </button>

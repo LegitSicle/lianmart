@@ -30,7 +30,7 @@ class AuthController extends Controller {
         if ($request->isGet()) {
             if ($request->path() === "/logout") {
                 call_user_func($this->injectedData["logout"]);
-                return Response::redirectOnly("/home");
+                return Response::redirect("/home");
             }
             return Response::create()
                 ->content($this->viewContents($request));
@@ -41,7 +41,7 @@ class AuthController extends Controller {
         $requestBody = $request->body();
         if (isset($requestBody["form_action"]) && $requestBody["form_action"] === "return_confirmed") {
             $this->removeTimed();
-            return Response::redirectOnly("/home");
+            return Response::redirect("/home");
         }
 
         if (str_starts_with($requestPath, "/register")) {
@@ -104,14 +104,14 @@ class AuthController extends Controller {
             $session->setTimed("email", $account->email, self::TIMER);
             $session->setTimed("password", $account->password, self::TIMER);
             $session->setTimed("confirmPassword", $account->confirmPassword, self::TIMER);
-            return Response::redirectOnly("/register/personal");
+            return Response::redirect("/register/personal");
         }
     }
 
     private function createPersonal(Request $request): Response {
         $requestBody = $request->body();
         if ($requestBody["action"] === "back") {
-            return Response::redirectOnly("/register/account");
+            return Response::redirect("/register/account");
         }
         $personal = new CreatePersonal();
         $personal->loadData($requestBody);
@@ -125,14 +125,14 @@ class AuthController extends Controller {
             $session->setTimed("lastname", $personal->lastname, self::TIMER);
             $session->setTimed("birthdate", $personal->birthdate, self::TIMER);
             $session->setTimed("phoneNumber", $personal->phoneNumber, self::TIMER);
-            return Response::redirectOnly("/register/delivery");
+            return Response::redirect("/register/delivery");
         }
     }
 
     private function createDelivery(Request $request): Response {
         $requestBody = $request->body();
         if ($requestBody["action"] === "back") {
-            return Response::redirectOnly("/register/personal");
+            return Response::redirect("/register/personal");
         }
         $address = new Addresses();
         $address->loadData($requestBody);
@@ -159,7 +159,7 @@ class AuthController extends Controller {
                 "userId" => $user->userId
             ]);
             $address->insert();
-            return Response::redirectOnly("/home");
+            return Response::redirect("/home");
         }
     }
 
@@ -177,7 +177,7 @@ class AuthController extends Controller {
                     ->contentFrom($request->path(), "auth", $payload);
         }
         call_user_func($this->injectedData["login"], $user);
-        return Response::redirectOnly("/home");
+        return Response::redirect("/home");
     }
 
     private function getAccount(): CreateAccount {

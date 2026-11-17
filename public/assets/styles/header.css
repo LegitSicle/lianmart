@@ -6,7 +6,9 @@ header hr, .nav-wrapper ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   max-width: 1500px;
+  padding: 0 20px;
   margin: 0 auto;
   background: var(--cream);
 }
@@ -71,4 +73,25 @@ header hr, .nav-wrapper ul {
 .nav-wrapper nav a.active {
   font-weight: 700;
   border-bottom: 3px solid var(--green);
+}
+
+@media screen and (max-width: 600px) {
+  .top-icons img{
+    width: 25px;
+  }
+
+  .top-container>img{
+    width: 150px !important; 
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .top-container {
+    padding: 20px;
+  }
+
+  .top-container>img{
+    display: none !important;
+    /* width: 150px !important;  */
+  }
 }

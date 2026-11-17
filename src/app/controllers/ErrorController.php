@@ -12,6 +12,6 @@ class ErrorController extends Controller {
         $statusCode = $request->apacheErrorStatus();
         if ($statusCode === null) throw new Exception("Route Not Found!", 404);
         if ($statusCode === 403) throw new Exception("Forbidden!", 403);
-        return Response::redirectOnly("/home");
+        return Response::redirect("/home");
     }
 }

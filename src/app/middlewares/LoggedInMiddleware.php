@@ -10,7 +10,7 @@ class LoggedInMiddleware extends Middleware {
 
     #[Override]
     public function handle(Request $request, callable $next): Response {
-        if (self::getShared("isGuest")) return Response::redirectOnly("/login");
+        if (self::getShared("isGuest")) return Response::redirect("/login");
         return $next($request);
     }
 }

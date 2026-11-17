@@ -253,6 +253,14 @@ return function (Application $app): void {
     );
 
     $app->router->addRoute((new Route())
+        ->post("/admin/users", [AdminUserController::class])
+        ->middlewares(
+            [DisabledUserMiddleware::class],
+            [AdminMiddleware::class]
+        )
+    );
+
+    $app->router->addRoute((new Route())
         ->post("/register/account", [AuthController::class])
     );
 
