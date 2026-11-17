@@ -13,16 +13,16 @@ class AdminOrderController extends Controller {
     public function index(Request $request): Response {
         $body = $request->body();
         $body["section"] = "Orders";
-        $body["orders"] = $this->queryOrders();
+        $body["orders"] = $this->queryOrders($body["search"]);
 
         return Response::create()
             ->contentFrom("/admin/orders", "admin", $body);
     }
 
-    private function queryOrders(): array {
+    private function queryOrders(?string $search): array {
         /** @var SQLStatement */
         $sql = $this->injectedData["sql"];
-        $rows = $sql
+        $sql = $sql
             ->select([
                 "Orders.orderId",
                 SQLStatement::concat([
@@ -46,7 +46,22 @@ class AdminOrderController extends Controller {
             ])
             ->from("Orders")
             ->innerJoin("Users", ["Orders.userId" => "Users.userId"])
-            ->innerJoin("Addresses", ["Orders.addressId" => "Addresses.addressId"])
+            ->innerJoin("Addresses", ["Orders.addressId" => "Addresses.addressId"]);
+
+        if (isset($search)) {
+            if (str_starts_with($search, "#")) {
+                $search = ltrim($search, "#");
+                $sql = $sql
+                    ->where("Orders.orderId", "LIKE", "%{$search}%");
+            } else {
+                $sql = $sql->orWhere("firstname", "LIKE", "%{$search}%")
+                    ->orWhere("lastname", "LIKE", "%{$search}%")
+                    ->orWhere(SQLStatement::concat(["firstname", SQLStatement::value(" "), "lastname"]), "LIKE", "%{$search}%")
+                    ->orWhere(SQLStatement::concat(["firstname", "lastname"]), "LIKE", "%" . str_replace(" ", "", $search) . "%");
+            }
+        }
+
+        $rows = $sql
             ->query()
             ->fetchAll(PDO::FETCH_ASSOC);
 

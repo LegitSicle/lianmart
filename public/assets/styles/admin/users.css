@@ -122,7 +122,8 @@ body {
 }
 
 /* topbar */
-.topbar {
+.topbar,
+#searchForm  {
 	height: 62px;
 	display: flex;
 	align-items: center;

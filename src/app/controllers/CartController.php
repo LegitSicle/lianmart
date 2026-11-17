@@ -18,7 +18,6 @@ class CartController extends Controller {
         $body = $request->body();
         $body["title"] = "Checkout - LianMart";
         $body["username"] = $this->injectedData["username"];
-        $body["isAdmin"] = $this->injectedData["isAdmin"];
         $this->deleteOutofStockItems();
         if ($request->isGet()) {
             return $this->respond($body);

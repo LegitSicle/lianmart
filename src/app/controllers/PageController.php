@@ -22,7 +22,6 @@ class PageController extends Controller {
         $body = $request->body();
         $body["title"] = self::TITLES[$body["url"]] ?? "LianMart";
         $body["username"] = static::getShared("username");
-        $body["isAdmin"] = static::getShared("isAdmin");
         $flash = $this->checkFlash();
         if (isset($flash)) {
             $body["show"] = true;

@@ -2,11 +2,15 @@
 use core\web\Viewer;
 
 function iterComponents(string $component, int $page, int $amount, ?array $data): void {
-    if (empty($data)) return;
-    $maxPageCount = (int) ceil(count($data) / $amount);
-    $iter = $maxPageCount === $page ? count($data) - ($amount * ($maxPageCount - 1)) : $amount;
-    for ($i = 0; $i < $iter; $i++) { 
-        echo Viewer::getComponents($component, $data[(($page - 1) * $amount) + $i]);
+    if (empty($data) || $page < 1 || $amount < 1) return;
+
+    $offset = ($page - 1) * $amount;
+    $pageItems = array_slice($data, $offset, $amount);
+
+    foreach ($pageItems as $item) {
+        if (is_array($item)) {
+            echo Viewer::getComponents($component, $item);
+        }
     }
 }
 

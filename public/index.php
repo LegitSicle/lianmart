@@ -1,6 +1,5 @@
 <?php
 // entry point of the website
-// ISSUE: OPTIONAL MODEL VARIABLES ARENT BEING INSERTED INTO DB
 declare(strict_types=1);
 define("ROOT", dirname(__DIR__));
 require_once ROOT . DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR . "autoload.php";
@@ -18,7 +17,6 @@ use core\Application;
 
 $app = new Application();
 PageController::insertShared("username", $app->getUsername());
-PageController::insertShared("isAdmin", $app->isUserPresentIn("Admins.userId"));
 AuthController::insertShared("session", $app->session);
 
 AdminMiddleware::insertShared("isAdmin", $app->isUserPresentIn("Admins.userId"));

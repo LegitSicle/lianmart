@@ -6,6 +6,7 @@ use PDOStatement;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
+use DateTimeInterface;
 
 use function sprintf;
 use function is_int;
@@ -22,7 +23,7 @@ use function count;
 final class SQLValue {
     public function __construct(public readonly string $value) {}
 }
- 
+
 /**
  * A CONCAT(...) / CONCAT_WS(...) expression with an optional alias.
  * Used in select() (alias required) and in where() (alias ignored).
@@ -34,7 +35,7 @@ final class SQLConcat {
         public readonly ?string $separator = null   // set => CONCAT_WS, skips NULL/empty parts
     ) {}
 }
- 
+
 /**
  * Another SQLStatement embedded as a subquery: (SELECT ...) AS alias.
  * Used in select() (alias required).
@@ -45,7 +46,7 @@ final class SQLSubquery {
         public readonly ?string $alias = null
     ) {}
 }
- 
+
 class SQLStatement {
     // Aggregates
     public const GROUP_CONCAT = "GROUP_CONCAT(%val)";
@@ -54,24 +55,25 @@ class SQLStatement {
     public const MIN = "MIN(%val)";
     public const MAX = "MAX(%val)";
     public const AVG = "AVG(%val)";
- 
+
     // Order directions
     public const ASC = "ASC";
     public const DESC = "DESC";
- 
+
     // Arithmetic
     public const ADD      = "+";
     public const SUBTRACT = "-";
     public const MULTIPLY = "*";
     public const DIVIDE   = "/";
- 
+
+    // Periods for wherePeriod() (weeks start on Monday)
     public const THIS_WEEK  = "THIS_WEEK";
     public const LAST_WEEK  = "LAST_WEEK";
     public const THIS_MONTH = "THIS_MONTH";
     public const LAST_MONTH = "LAST_MONTH";
     public const THIS_YEAR  = "THIS_YEAR";
     public const LAST_YEAR  = "LAST_YEAR";
- 
+
     private const ARITHMETIC = [self::ADD, self::SUBTRACT, self::MULTIPLY, self::DIVIDE];
     private const AGGREGATES = [
         self::GROUP_CONCAT,
@@ -82,17 +84,18 @@ class SQLStatement {
         self::AVG
     ];
     private const OPERATORS = ["=", "!=", "<>", "<", "<=", ">", ">=", "LIKE", "NOT LIKE", "IN", "NOT IN"];
- 
+
     private string $sql = "";
     private array $data = [];
     private bool $hasSubquery = false;
     private bool $hasWhere = false;
     private bool $hasGroupBy = false;
- 
+    private bool $groupStart = false;   // true right after a where group opens "("
+
     public function __construct(
         private PDO $pdo
     ) {}
- 
+
     /**
      * A literal for use inside a concat, e.g.
      * SQLStatement::concat(["firstName", SQLStatement::value(" "), "lastName"], "fullName")
@@ -100,7 +103,7 @@ class SQLStatement {
     public static function value(string $value): SQLValue {
         return new SQLValue($value);
     }
- 
+
     /**
      * CONCAT(...). Parts are column names, SQLStatement::value() literals or nested concats.
      * Returns NULL if any part is NULL.
@@ -108,7 +111,7 @@ class SQLStatement {
     public static function concat(array $parts, ?string $alias = null): SQLConcat {
         return new SQLConcat($parts, $alias);
     }
- 
+
     /**
      * CONCAT_WS(...): joins with a separator and skips parts that are NULL or empty, e.g.
      * SQLStatement::concatWs(" ", ["firstName", "middleName", "lastName"], "fullName")
@@ -119,30 +122,30 @@ class SQLStatement {
     public static function concatWs(string $separator, array $parts, ?string $alias = null): SQLConcat {
         return new SQLConcat($parts, $alias, $separator);
     }
- 
+
     /**
      * Embeds another statement in select() as a scalar subquery, e.g.
-     * `SQLStatement::subquery(
+     * SQLStatement::subquery(
      *     $sql->sub()->select([[[SQLStatement::COUNT => "*"], "n"]])->from("Products"),
      *     "totalProducts"
-     * )`
+     * )
      * The inner statement must be a separate instance (use sub()) and is consumed by the embedding.
      */
     public static function subquery(self $statement, ?string $alias = null): SQLSubquery {
         return new SQLSubquery($statement, $alias);
     }
- 
+
     /**
      * A fresh, empty statement on the same connection, for building subqueries.
      */
     public function sub(): self {
         return new self($this->pdo);
     }
- 
+
     public function getSql(): string {
         return $this->sql;
     }
- 
+
     /**
      * Entries:<br>
      *   "col"                                          => `col`<br>
@@ -161,7 +164,7 @@ class SQLStatement {
         if ($columns === []) {
             throw new InvalidArgumentException("select() needs at least one column.");
         }
- 
+
         $parts = [];
         $bindings = [];
         foreach ($columns as $key => $column) {
@@ -191,6 +194,7 @@ class SQLStatement {
                 $parts[] = $sql . " AS " . $this->alias($column[1]);
                 array_push($bindings, ...$exprBindings);
             } elseif (is_array($column) && count($column) === 1 && !array_is_list($column)) {
+                // [SQLStatement::COUNT => "col"] without an alias
                 [$sql, $exprBindings] = $this->expression($column);
                 $parts[] = $sql;
                 array_push($bindings, ...$exprBindings);
@@ -198,72 +202,123 @@ class SQLStatement {
                 throw new InvalidArgumentException("Invalid select entry at position " . var_export($key, true) . ".");
             }
         }
- 
+
         $this->sql .= "SELECT " . implode(", ", $parts) . " ";
         array_push($this->data, ...$bindings);
         return $this;
     }
- 
+
     public function selectExists(string $table): self {
         $this->sql .= "SELECT EXISTS (SELECT 1 FROM " . $this->encase($table) . " ";
         $this->hasSubquery = true;
         return $this;
     }
- 
+
     public function selectAll(): self {
         $this->sql .= "SELECT * ";
         return $this;
     }
- 
+
     public function deleteFrom(string $table): self {
         $this->sql .= "DELETE " . $this->encase($table) . " FROM " . $this->encase($table) . " ";
         return $this;
     }
- 
+
     public function from(string $table): self {
         $this->sql .= "FROM " . $this->encase($table) . " ";
         return $this;
     }
- 
+
     public function innerJoin(string $table, array $on): self {
         return $this->join("INNER", $table, $on);
     }
- 
+
     public function leftJoin(string $table, array $on): self {
         return $this->join("LEFT", $table, $on);
     }
- 
+
     /**
      * @param string|SQLConcat $column A column name, or SQLStatement::concat()/concatWs() (alias ignored).
      */
     public function where(string|SQLConcat $column, string $operator, mixed $value): self {
         return $this->condition("AND", $column, $operator, $value);
     }
- 
+
     public function orWhere(string|SQLConcat $column, string $operator, mixed $value): self {
         return $this->condition("OR", $column, $operator, $value);
     }
- 
+
     /**
-     * Rows whose date/datetime column falls in the given period, e.g.<br>
-     * `->wherePeriod("Orders.created_at", SQLStatement::LAST_MONTH)`
+     * Wraps the conditions added inside the callback in parentheses, joined to the rest with AND, e.g.
+     * ->where("active", "=", 1)
+     * ->whereGroup(fn (SQLStatement $q) => $q->where("a", "=", 1)->orWhere("b", "=", 2))
+     * // WHERE `active` = ? AND ( `a` = ? OR `b` = ? )
+     *
+     * The first condition inside the group needs no AND/OR, so where() and orWhere() both work there.
+     * Groups can be nested and can contain wherePeriod(), whereBefore() and so on.
+     */
+    public function whereGroup(callable $callback): self {
+        return $this->group("AND", $callback);
+    }
+
+    public function orWhereGroup(callable $callback): self {
+        return $this->group("OR", $callback);
+    }
+
+    /**
+     * Rows whose date/datetime column falls in the given period, e.g.
+     * ->wherePeriod("Orders.created_at", SQLStatement::LAST_MONTH)
      * Uses the database server's clock and compares as a range, so indexes on the column still work.
      */
     public function wherePeriod(string $column, string $period): self {
         return $this->addCondition("AND", $this->periodSql($column, $period));
     }
- 
+
     public function orWherePeriod(string $column, string $period): self {
         return $this->addCondition("OR", $this->periodSql($column, $period));
     }
- 
+
+    /**
+     * Rows whose date/datetime column is before a date, e.g.
+     * ->whereBefore("Orders.created_at", "2026-11-01")   // up to the end of 31 Oct
+     * ->whereBefore("Orders.created_at", "2026-11-01", true)   // up to the end of 1 Nov
+     *
+     * $date is "YYYY-MM-DD", "YYYY-MM-DD HH:MM[:SS]" or a DateTimeInterface.
+     * A date-only string means the whole day; a datetime is compared exactly.
+     */
+    public function whereBefore(string $column, string|DateTimeInterface $date, bool $inclusive = false): self {
+        [$sql, $bindings] = $this->dateSql($column, $date, true, $inclusive);
+        return $this->addCondition("AND", $sql, $bindings);
+    }
+
+    /**
+     * Rows whose date/datetime column is after a date, e.g.
+     * ->whereAfter("Orders.created_at", "2026-11-01")   // from 2 Nov onwards
+     * ->whereAfter("Orders.created_at", "2026-11-01", true)   // from 1 Nov onwards
+     * Same date formats as whereBefore().
+     */
+    public function whereAfter(string $column, string|DateTimeInterface $date, bool $inclusive = false): self {
+        [$sql, $bindings] = $this->dateSql($column, $date, false, $inclusive);
+        return $this->addCondition("AND", $sql, $bindings);
+    }
+
+    public function orWhereBefore(string $column, string|DateTimeInterface $date, bool $inclusive = false): self {
+        [$sql, $bindings] = $this->dateSql($column, $date, true, $inclusive);
+        return $this->addCondition("OR", $sql, $bindings);
+    }
+
+    public function orWhereAfter(string $column, string|DateTimeInterface $date, bool $inclusive = false): self {
+        [$sql, $bindings] = $this->dateSql($column, $date, false, $inclusive);
+        return $this->addCondition("OR", $sql, $bindings);
+    }
+
     public function insert(string $table, array $columnValues): self {
         if ($columnValues === []) {
             throw new InvalidArgumentException("insert() needs at least one column.");
         }
- 
+
         $columns = array_map($this->encase(...), array_keys($columnValues));
- 
+
         $this->sql .= sprintf(
             "INSERT INTO %s (%s) VALUES (%s) ",
             $this->encase($table),
@@ -271,17 +326,17 @@ class SQLStatement {
             implode(", ", array_fill(0, count($columnValues), "?"))
         );
         array_push($this->data, ...array_values($columnValues));
- 
+
         return $this;
     }
- 
+
     public function update(string $table, array $columnValues): self {
         if ($columnValues === []) {
             throw new InvalidArgumentException("update() needs at least one column.");
         }
- 
+
         $sets = array_map(fn ($c) => $this->encase($c) . ' = ?', array_keys($columnValues));
- 
+
         $this->sql .= sprintf(
             "UPDATE %s SET %s ",
             $this->encase($table),
@@ -290,7 +345,7 @@ class SQLStatement {
         array_push($this->data, ...array_values($columnValues));
         return $this;
     }
- 
+
     public function groupBy(array $columns): self {
         if ($columns === []) {
             throw new InvalidArgumentException("groupBy() needs at least one column.");
@@ -298,15 +353,15 @@ class SQLStatement {
         if ($this->hasGroupBy) {
             throw new LogicException("groupBy() can only be called once; pass all columns in one array.");
         }
- 
+
         $this->sql .= "GROUP BY "
             . implode(", ", array_map($this->encase(...), $columns))
             . " ";
         $this->hasGroupBy = true;
- 
+
         return $this;
     }
- 
+
     public function orderBy(array $columns): self {
         if ($columns === []) {
             throw new InvalidArgumentException('orderBy() needs at least one column.');
@@ -317,60 +372,60 @@ class SQLStatement {
                 $column = $direction;
                 $direction = self::ASC;
             }
- 
+
             $direction = strtoupper((string) $direction);
             if ($direction !== self::ASC && $direction !== self::DESC) {
                 throw new InvalidArgumentException("Invalid order direction: '$direction'");
             }
             $parts[] = $this->encase($column) . ' ' . $direction;
         }
- 
+
         $this->sql .= 'ORDER BY ' . implode(', ', $parts) . ' ';
         return $this;
     }
- 
+
     public function limit(int $limit): self {
         $this->sql .= "LIMIT " . max(0, $limit) . " ";
         return $this;
     }
- 
+
     public function offset(int $offset): self {
         $this->sql .= "OFFSET " . max(0, $offset) . " ";
         return $this;
     }
- 
+
     public function query(): PDOStatement {
         if ($this->sql === "") {
             throw new LogicException("No SQL to execute.");
         }
- 
+
         if ($this->hasSubquery) {
             $this->sql .= ")";
         }
- 
+
         try {
             $statement = $this->pdo->prepare($this->sql);
             if ($statement === false) {
                 throw new RuntimeException("Failed to prepare statement.");
             }
- 
+
             foreach ($this->data as $idx => $value) {
                 $statement->bindValue($idx + 1, $value, $this->pdoType($value));
             }
             if (!$statement->execute()) {
                 throw new RuntimeException("Failed to execute statement.");
             }
- 
+
             return $statement;
         } finally {
             $this->reset();
         }
     }
- 
+
     private function isTemplate(string $key): bool {
         return in_array($key, self::AGGREGATES, true) || in_array($key, self::ARITHMETIC, true);
     }
- 
+
     /**
      * Builds a select expression.
      * A string is a column, SQLConcat is a concat, and a one-entry array is
@@ -401,12 +456,12 @@ class SQLStatement {
         if (is_array($expr) && count($expr) === 1) {
             $template = array_key_first($expr);
             $arg = $expr[$template];
- 
+
             if (is_string($template) && in_array($template, self::AGGREGATES, true)) {
                 [$inner, $bindings] = $this->expression($arg);
                 return [str_replace("%val", $inner, $template), $bindings];
             }
- 
+
             if (is_string($template) && in_array($template, self::ARITHMETIC, true)) {
                 if (!is_array($arg) || !array_is_list($arg) || count($arg) !== 2) {
                     throw new InvalidArgumentException("Operator $template needs exactly two operands: [$template => [left, right]].");
@@ -418,11 +473,11 @@ class SQLStatement {
         }
         throw new InvalidArgumentException("Invalid select expression.");
     }
- 
+
     private function aliased(string $sql, ?string $alias): string {
         return $alias === null ? $sql : $sql . " AS " . $this->alias($alias);
     }
- 
+
     private function alias(string $alias): string {
         $alias = trim($alias);
         if (!preg_match("/^[A-Za-z_][A-Za-z0-9_]*$/", $alias)) {
@@ -430,12 +485,12 @@ class SQLStatement {
         }
         return "`$alias`";
     }
- 
+
     private function condition(string $proposition, string|SQLConcat $column, string $operator, mixed $value): self {
         [$sql, $bindings] = $this->conditionSql($column, $operator, $value);
         return $this->addCondition($proposition, $sql, $bindings);
     }
- 
+
     /**
      * Builds one condition such as `col` = ? without attaching it to the statement.
      *
@@ -447,7 +502,7 @@ class SQLStatement {
             throw new InvalidArgumentException("Invalid operator: {$operator}");
         }
         [$column, $columnBindings] = $this->columnExpression($column);
- 
+
         if ($value instanceof self) {
             if ($operator === "LIKE" || $operator === "NOT LIKE") {
                 throw new InvalidArgumentException("Operator $operator cannot be used with a subquery.");
@@ -455,7 +510,7 @@ class SQLStatement {
             [$subSql, $subBindings] = $this->statementSql($value);
             return ["$column $operator $subSql", [...$columnBindings, ...$subBindings]];
         }
- 
+
         if (is_null($value)) {
             return match ($operator) {
                 "="        => ["$column IS NULL", $columnBindings],
@@ -474,11 +529,11 @@ class SQLStatement {
         }
         return ["$column $operator ?", [...$columnBindings, $value]];
     }
- 
+
     private function subquerySql(SQLSubquery $subquery): array {
         return $this->statementSql($subquery->statement);
     }
- 
+
     /**
      * Takes the SQL and bindings built so far on another statement and wraps them in parentheses.
      * The inner statement is cleared afterwards, like query() does.
@@ -489,7 +544,7 @@ class SQLStatement {
         if ($inner === $this) {
             throw new LogicException("A statement cannot be used as a subquery of itself; use sub().");
         }
- 
+
         $sql = trim($inner->sql);
         if ($sql === "" || !str_starts_with(strtoupper($sql), "SELECT")) {
             throw new InvalidArgumentException("A subquery must be a SELECT statement.");
@@ -499,18 +554,19 @@ class SQLStatement {
         }
         $bindings = $inner->data;
         $inner->reset();
- 
+
         return ["($sql)", $bindings];
     }
- 
+
     private function reset(): void {
         $this->sql = "";
         $this->data = [];
         $this->hasWhere = false;
         $this->hasGroupBy = false;
         $this->hasSubquery = false;
+        $this->groupStart = false;
     }
- 
+
     /**
      * The column side of a condition: a column name or a concat.
      *
@@ -522,7 +578,7 @@ class SQLStatement {
         }
         return $this->concatSql($column->parts, $column->separator);
     }
- 
+
     /**
      * Builds CONCAT(...) or, with a separator, CONCAT_WS(...). Column parts are wrapped in
      * NULLIF(col, '') in CONCAT_WS mode (and in concats nested inside it) so empty strings
@@ -536,14 +592,14 @@ class SQLStatement {
             throw new InvalidArgumentException("A concat needs at least $minimum part(s).");
         }
         $skipEmpty = $skipEmpty || $separator !== null;
- 
+
         $sql = [];
         $bindings = [];
         if ($separator !== null) {
             $sql[] = "?";
             $bindings[] = $separator;
         }
- 
+
         foreach ($parts as $part) {
             if ($part instanceof SQLValue) {
                 $sql[] = "?";
@@ -559,18 +615,18 @@ class SQLStatement {
                 throw new InvalidArgumentException("Concat parts must be column names, SQLStatement::value() or a concat.");
             }
         }
- 
+
         $function = $separator !== null ? "CONCAT_WS" : "CONCAT";
         return ["$function(" . implode(", ", $sql) . ")", $bindings];
     }
- 
+
     private function periodSql(string $column, string $period): string {
         $column = $this->encase($column);
- 
+
         $weekStart  = "DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)";
         $monthStart = "DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE()) - 1 DAY)";
         $yearStart  = "DATE_SUB(CURDATE(), INTERVAL DAYOFYEAR(CURDATE()) - 1 DAY)";
- 
+
         [$from, $to] = match ($period) {
             self::THIS_WEEK  => [$weekStart, "DATE_ADD($weekStart, INTERVAL 7 DAY)"],
             self::LAST_WEEK  => ["DATE_SUB($weekStart, INTERVAL 7 DAY)", $weekStart],
@@ -580,36 +636,76 @@ class SQLStatement {
             self::LAST_YEAR  => ["DATE_SUB($yearStart, INTERVAL 1 YEAR)", $yearStart],
             default          => throw new InvalidArgumentException("Invalid period: $period"),
         };
- 
+
         return "($column >= $from AND $column < $to)";
     }
- 
+
+    /**
+     * Builds a before/after comparison against a date.
+     * A date-only string covers the whole day, so "after 2026-11-01" starts at 2026-11-02 00:00
+     * and "on or before 2026-11-01" ends at 2026-11-01 23:59:59. A datetime is compared exactly.
+     *
+     * @return array{0: string, 1: array} SQL fragment and the bindings it needs.
+     */
+    private function dateSql(string $column, string|DateTimeInterface $date, bool $before, bool $inclusive): array {
+        $column = $this->encase($column);
+
+        if ($date instanceof DateTimeInterface) {
+            $value = $date->format("Y-m-d H:i:s");
+            $dateOnly = false;
+        } else {
+            $value = str_replace("T", " ", trim($date));
+            $dateOnly = (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $value);
+            if (!$dateOnly && !preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/', $value)) {
+                throw new InvalidArgumentException("Invalid date: $date");
+            }
+            [$year, $month, $day] = array_map("intval", explode("-", substr($value, 0, 10)));
+            if (!checkdate($month, $day, $year)) {
+                throw new InvalidArgumentException("Invalid date: $date");
+            }
+        }
+
+        if ($dateOnly) {
+            $sql = match (true) {
+                $before && !$inclusive  => "$column < ?",
+                $before && $inclusive   => "$column < DATE_ADD(?, INTERVAL 1 DAY)",
+                !$before && !$inclusive => "$column >= DATE_ADD(?, INTERVAL 1 DAY)",
+                default                 => "$column >= ?",
+            };
+        } else {
+            $operator = ($before ? "<" : ">") . ($inclusive ? "=" : "");
+            $sql = "$column $operator ?";
+        }
+
+        return [$sql, [$value]];
+    }
+
     private function encase(string $name): string {
         $parts = explode(".", trim($name));
- 
+
         foreach ($parts as $part) {
             if ($part !== "*" && !preg_match("/^[A-Za-z_][A-Za-z0-9_]*$/", $part)) {
                 throw new InvalidArgumentException("Invalid identifier: $name");
             }
         }
- 
+
         return implode(".", array_map(fn ($p) => $p === "*" ? "*" : "`$p`", $parts));
     }
- 
+
     private function join(string $type, string $table, array $on): self {
         if ($on === []) {
             throw new InvalidArgumentException("A join needs at least one ON condition.");
         }
- 
+
         $conditions = [];
         foreach ($on as $first => $second) {
             $conditions[] = $this->encase($first) . " = " . $this->encase($second);
         }
- 
+
         $this->sql .= sprintf("%s JOIN %s ON %s ", $type, $this->encase($table), implode(" AND ", $conditions));
         return $this;
     }
- 
+
     private function pdoType(mixed $value): int {
         return match (true) {
             is_int($value)  => PDO::PARAM_INT,
@@ -618,11 +714,32 @@ class SQLStatement {
             default         => PDO::PARAM_STR,
         };
     }
- 
+
     private function addCondition(string $proposition, string $sql, array $bindings = []): self {
-        $this->sql .= ($this->hasWhere ? "$proposition " : "WHERE ") . $sql . " ";
+        if ($this->groupStart) {
+            $prefix = "";   // first condition inside a group
+            $this->groupStart = false;
+        } else {
+            $prefix = $this->hasWhere ? "$proposition " : "WHERE ";
+        }
+        $this->sql .= $prefix . $sql . " ";
         $this->hasWhere = true;
         array_push($this->data, ...$bindings);
+        return $this;
+    }
+
+    private function group(string $proposition, callable $callback): self {
+        $prefix = $this->groupStart ? "" : ($this->hasWhere ? "$proposition " : "WHERE ");
+        $this->sql .= $prefix . "( ";
+        $this->hasWhere = true;
+        $this->groupStart = true;
+
+        $callback($this);
+
+        if ($this->groupStart) {
+            throw new LogicException("A where group needs at least one condition.");
+        }
+        $this->sql .= ") ";
         return $this;
     }
 }

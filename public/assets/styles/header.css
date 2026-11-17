@@ -1,13 +1,15 @@
 header hr, .nav-wrapper ul {
   margin: 0;
+  padding: 0;
 }
 
 .top-container{
+  box-sizing: content-box;
+  width: 1500px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  max-width: 1500px;
   padding: 0 20px;
   margin: 0 auto;
   background: var(--cream);
@@ -43,12 +45,18 @@ header hr, .nav-wrapper ul {
   padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: 30px;
-  background: #fff;
+  background: var(--surface);
   font-size: 13px;
 }
 
+.search input:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
 .nav-wrapper {
-  max-width: 1500px;
+  box-sizing: content-box;
+  width: 1500px;
   margin: 0 auto;
   padding: 0 20px;
 }

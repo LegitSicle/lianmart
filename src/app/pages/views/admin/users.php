@@ -1,43 +1,50 @@
 <?php
 use core\web\Viewer;
 /** @var array $users */
+/** @var ?string $role */
+/** @var ?string $status */
+/** @var ?string $joined */
 
 $page = max(1, (int) ($page ?? 1));
 $maxPageCount = (int) ceil(count($users) / 15);
+$joined = isset($joined) ? " value=\"{$joined}\"" : "";
+
+function isSelected(?string $value, ?string $check): string {
+    return (empty($value) && empty($check)) || $value == $check ? " selected" : "";
+}
 
 ?>
 <header class="topbar">
     <form id="searchForm">
         <div class="search-container">
             <img class="search-icon" src="/lianmart/assets/images/admins/search.svg" width="20" height="20" alt="Search Icon">
-            <input class="search-input" id="searchInput" type="text" placeholder="Search users..." aria-label="Search">
+            <input class="search-input" id="searchInput" name="search" type="text" placeholder="Search users..." aria-label="Search">
+        </div>
+        <div class="sort-container">
+            <div class="role-container">
+                <img id="role-icon" src="/lianmart/assets/images/admins/person.svg" width="20" height="20" alt="Role Icon">
+                <select for="role-select" id="role-select" name="role">
+                    <option disabled hidden<?= isSelected($role, null) ?>>Role</option>
+                    <option value="all"<?= isSelected($role, "all") ?>>All</option>
+                    <option value="admin"<?= isSelected($role, "admin") ?>>Admin</option>
+                    <option value="user"<?= isSelected($role, "user") ?>>User</option>
+                </select>
+            </div>
+            <div class="status-container">
+                <img id="status-icon" src="/lianmart/assets/images/admins/circle-status.svg" width="20" height="20" alt="Status Icon">
+                <select for="status-select" id="status-select" name="status">
+                    <option disabled hidden<?= isSelected($status, null) ?>>Status</option>
+                    <option value="all"<?= isSelected($status, "all") ?>>All</option>
+                    <option value="active"<?= isSelected($status, "active") ?>>Active</option>
+                    <option value="disabled"<?= isSelected($status, "disabled") ?>>Disabled</option>
+                </select>
+            </div>
+            <div class="date-container">
+                <label for="date-input">Joined After:</label>
+                <input id="date-input" type="date" aria-label="Filter by Joined Date" name="joined"<?= $joined ?>>
+            </div>
         </div>
     </form>
-    <div class="sort-container">
-        <div class="role-container">
-            <img id="role-icon" src="/lianmart/assets/images/admins/person.svg" width="20" height="20" alt="Role Icon">
-            <select for="role-select" id="role-select">
-                <option selected disabled hidden value="">Role</option>
-                <option value="all">All</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-            </select>
-        </div>
-        <div class="status-container">
-            <img id="status-icon" src="/lianmart/assets/images/admins/circle-status.svg" width="20" height="20" alt="Status Icon">
-            <select for="status-select" id="status-select">
-                <option selected disabled hidden value="">Status</option>
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="disabled">Disabled</option>
-            </select>
-        </div>
-        <div class="date-container">
-            <label for="date-input">Joined After:</label>
-            <input id="date-input" type="date" aria-label="Filter by Joined Date" value="2026-11-08">
-        </div>
-    </div>
 </header>
 
 <main class="content">

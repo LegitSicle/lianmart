@@ -45,9 +45,6 @@ $url ??= "home"
                         <strong><?= safe_encode($username ?? "Guest") ?></strong>
                     </div>
                 </a>
-                <?php if ($isAdmin ?? false): ?>
-                    <a href="/lianmart/admin/orders"><strong>Admin</strong></a>
-                <?php endif; ?>
             </div>
         </div>
         <hr>

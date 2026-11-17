@@ -32,7 +32,6 @@ class CatalogController extends Controller {
             $body["categories"] = $this->queryCategories();
             $body["products"] = $this->queryProducts($body);
             $body["username"] = $this->injectedData["username"];
-            $body["isAdmin"] = $this->injectedData["isAdmin"];
             $body["cartedProducts"] = $this->queryCartIds();
             return Response::create()
                 ->contentFrom("/catalog", "main", $body);

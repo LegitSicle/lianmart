@@ -44,7 +44,6 @@ return function (Application $app): void {
         ->get("/catalog", [CatalogController::class, 
             "sql" => $app->database->createSQL(), 
             "username" => $app->getUsername(), 
-            "isAdmin" => $app->isUserPresentIn("Admins.userId"),
             "userId" => $app->getUserId()
         ])
         ->middlewares(
@@ -66,7 +65,6 @@ return function (Application $app): void {
         ->get("/cart", [CartController::class, 
             "sql" => $app->database->createSQL(), 
             "username" => $app->getUsername(), 
-            "isAdmin" => $app->isUserPresentIn("Admins.userId"),
             "userId" => $app->getUserId()
         ])
         ->middlewares(
@@ -211,7 +209,6 @@ return function (Application $app): void {
             "sql" => $app->database->createSQL(), 
             "session" => $app->session,
             "username" => $app->getUsername(), 
-            "isAdmin" => $app->isUserPresentIn("Admins.userId"),
             "userId" => $app->getUserId()
         ])
         ->middlewares(
@@ -229,7 +226,6 @@ return function (Application $app): void {
         ->post("/catalog", [CatalogController::class, 
             "sql" => $app->database->createSQL(), 
             "username" => $app->getUsername(), 
-            "isAdmin" => $app->isUserPresentIn("Admins.userId"),
             "userId" => $app->getUserId()
         ])
         ->middlewares(
@@ -242,7 +238,6 @@ return function (Application $app): void {
         ->post("/cart", [CartController::class, 
             "sql" => $app->database->createSQL(), 
             "username" => $app->getUsername(), 
-            "isAdmin" => $app->isUserPresentIn("Admins.userId"),
             "session" => $app->session,
             "userId" => $app->getUserId()
         ])

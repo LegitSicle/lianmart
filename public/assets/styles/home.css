@@ -33,16 +33,6 @@ ul {
   list-style: none;
 }
 
-.top-container{
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background: var(--cream);
-  justify-content: space-between;
-  max-width: 1500px;
-  margin: 0 auto;
-}
-
 .wrap {
   max-width: 1500px;
   margin: 0 auto;

@@ -7,10 +7,10 @@ $maxPageCount = (int) ceil(count($orders ?? []) / 15);
 ?>
 
 <header class="topbar">
-    <form>
+    <form method="get" id="searchForm">
         <div class="search-container">
             <img class="search-icon" src="/lianmart/assets/images/admins/search.svg" width="20" height="20" alt="Search Icon">
-            <input class="search-input" type="text" placeholder="Search orders..." aria-label="Search">
+            <input class="search-input" id="searchInput" type="text" name="search" placeholder="Search orders..." aria-label="Search">
         </div>
     </form>
 </header>
@@ -32,7 +32,7 @@ $maxPageCount = (int) ceil(count($orders ?? []) / 15);
                     <th scope="col">
                         <div class="th-inner">
                             <p>Order ID</p>
-                            <button type="button" class="sort-btn" aria-label="Sort by Order ID">
+                            <button type="submit" class="sort-btn" aria-label="Sort by Order ID">
                                 <img width="12" height="16" src="/lianmart/assets/images/admins/sort.svg" alt="sort">
                             </button>
                         </div>

@@ -40,7 +40,7 @@ $checkOutDisabled = empty($cartItems) ? " disabled" : "";
                     <button type="button" class="btn">Apply</button>
                 </div>
                 
-                <div class="row"><span>Total</span><span id="total">&#8369;0.00</span></div>
+                <div class="row"><span>Total</span><span id="total">&#8369;<?= number_format(safe_encode($subtotal), 2) ?></span></div>
                 
                 <button type="submit" name="action" value="checkout" class="btn checkout" id="checkoutBtn"<?= $checkOutDisabled ?>>Proceed to checkout</button>
             </div>

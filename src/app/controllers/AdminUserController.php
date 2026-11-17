@@ -16,7 +16,7 @@ class AdminUserController extends Controller {
 
         if ($request->isGet()) {
             $body["section"] = "Customers";
-            $body["users"] = $this->queryUsers($body["search"]);
+            $body["users"] = $this->queryUsers($body["search"], $body["role"], $body["status"], $body["joined"]);
             return Response::create()
                 ->contentFrom($request->path(), "admin", $body);
         }
@@ -34,7 +34,15 @@ class AdminUserController extends Controller {
         return Response::redirect("/admin/users");
     }
 
-    private function queryUsers(?string $search): array {
+    private function queryUsers(
+        ?string $search = null, 
+        ?string $role = null, 
+        ?string $status = null,
+        ?string $joined = null
+    ): array {
+        $role ??= "all";
+        $status ??= "all";
+
         /** @var SQLStatement */
         $sql = $this->injectedData["sql"];
         $sql = $sql->select([
@@ -49,27 +57,39 @@ class AdminUserController extends Controller {
             ->from("Users")
             ->leftJoin("DisabledUsers", ["Users.userId" => "DisabledUsers.userId"])
             ->leftJoin("Admins", ["Users.userId" => "Admins.userId"]);
-            
-        if (isset($search)) {
-            $sql = $sql->orWhere("firstname", "LIKE", "%{$search}%")
-                ->orWhere("lastname", "LIKE", "%{$search}%")
-                ->orWhere(SQLStatement::concat(["firstname", SQLStatement::value(" "), "lastname"]), "LIKE", "%{$search}%")
-                ->orWhere(SQLStatement::concat(["firstname", "lastname"]), "LIKE", "%" . str_replace(" ", "", $search) . "%");
+
+        if (isset($joined)) {
+            $sql = $sql->whereAfter("Users.created_at", $joined, true);
+        }
+        if (isset($search) && $search !== "") {
+            $like = "%{$search}%";
+            $sql = $sql->whereGroup(function (SQLStatement $q) use ($like) {
+                $q->where("firstname", "LIKE", $like)
+                    ->orWhere("lastname", "LIKE", $like)
+                    ->orWhere(SQLStatement::concat(["firstname", SQLStatement::value(" "), "lastname"]), "LIKE", $like)
+                    ->orWhere(SQLStatement::concat(["firstname", "lastname"]), "LIKE", str_replace(" ", "", $like));
+            });
         }
 
         $rows = $sql->query()
             ->fetchAll(PDO::FETCH_ASSOC);
         
-        foreach ($rows as &$row) {
-            $row["role"] = match (true) {
-                $row["adminId"] !== null => "Admin",
-                default => "User"
-            };
+        foreach ($rows as $key => &$row) {
+            $isAdmin = $row["adminId"] !== null;
+            $isDisabled = $row["disabledId"] !== null;
 
-            $row["status"] = match (true) {
-                $row["disabledId"] !== null => "Disabled",
-                default => "Active"
-            };
+            if (
+                ($role === 'admin' && !$isAdmin)
+                || ($role === 'user' && $isAdmin)
+                || ($status === 'disabled' && !$isDisabled)
+                || ($status === 'active' && $isDisabled)
+            ) {
+                unset($rows[$key]);
+                continue;
+            }
+
+            $row["role"] = $isAdmin ? "Admin" : "User";
+            $row["status"] = $isDisabled ? "Disabled" : "Active";
             unset($row["disabledId"], $row["adminId"]);
         }
         return $rows;

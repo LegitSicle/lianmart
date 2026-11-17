@@ -1,20 +1,22 @@
 function preserveGetFromSearch(event) {
     event.preventDefault();
 
-    const searchInput = document.getElementById("searchInput").value;
+    const form = event.target;
+    const formData = new FormData(form);
     const url = new URL(window.location.href);
-    console.log(searchInput);
 
-    if (searchInput.trim() !== "") {
-        url.searchParams.set("search", searchInput);
-        console.log(url.toString());
-    } else {
-        url.searchParams.delete("search");
+    for (const [key, value] of formData.entries()) {
+        if (value.trim() !== "") {
+            url.searchParams.set(key, value);
+        } else {
+            url.searchParams.delete(key);
+        }
     }
 
     if (url.searchParams.has("page")) {
         url.searchParams.set("page", "1");
     }
+
     window.location.href = url.toString();
 }
 
