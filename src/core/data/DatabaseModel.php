@@ -44,7 +44,6 @@ abstract class DatabaseModel extends Model {
                 }
                 $columnValues[$attribute] = $this->{$attribute};
             }
-            error_log(json_encode($columnValues));
             static::$database->createSQL()
                 ->insert($tableName, $columnValues)
                 ->query();

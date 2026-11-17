@@ -1,13 +1,16 @@
 <?php
 use core\web\Viewer;
 /** @var array $users */
-/** @var ?string $role */
-/** @var ?string $status */
-/** @var ?string $joined */
+/** @var string $role */
+/** @var string $status */
+/** @var string $joined */
 
 $page = max(1, (int) ($page ?? 1));
 $maxPageCount = (int) ceil(count($users) / 15);
+$role ??= null;
+$status ??= null;
 $joined = isset($joined) ? " value=\"{$joined}\"" : "";
+
 
 function isSelected(?string $value, ?string $check): string {
     return (empty($value) && empty($check)) || $value == $check ? " selected" : "";

@@ -77,8 +77,6 @@ abstract class Model {
      * @return void
      */
     public function loadData(array $data): void {
-        error_log(static::class . " loadData: " . json_encode($data));
-
         foreach ($data as $key => $value) {
             if (!property_exists($this, $key)) {
                 continue;

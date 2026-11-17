@@ -194,7 +194,6 @@ class SQLStatement {
                 $parts[] = $sql . " AS " . $this->alias($column[1]);
                 array_push($bindings, ...$exprBindings);
             } elseif (is_array($column) && count($column) === 1 && !array_is_list($column)) {
-                // [SQLStatement::COUNT => "col"] without an alias
                 [$sql, $exprBindings] = $this->expression($column);
                 $parts[] = $sql;
                 array_push($bindings, ...$exprBindings);

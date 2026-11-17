@@ -39,7 +39,6 @@ class AdminProductController extends Controller {
         }
 
         // POST Request
-        error_log(print_r($body, true));
         if ($body["action"] === "save") {
             $product = new Products();
             $product->loadData($body);
